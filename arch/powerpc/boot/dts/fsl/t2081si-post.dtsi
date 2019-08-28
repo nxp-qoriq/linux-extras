@@ -2,6 +2,7 @@
  * T2081 Silicon/SoC Device Tree Source (post include)
  *
  * Copyright 2013 - 2014 Freescale Semiconductor Inc.
+ * Copyright 2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -548,7 +549,7 @@
 	};
 
 	serdes: serdes@ea000 {
-		compatible = "fsl,t2080-serdes";
+		compatible = "fsl,t2080-serdes", "fsl,serdes-10g";
 		reg = <0xea000 0x4000>;
 	};
 
@@ -572,14 +573,15 @@
 	spi@110000 {
 		fsl,espi-num-chipselects = <4>;
 	};
-
+/* remove esdhc
 /include/ "qoriq-esdhc-0.dtsi"
 	sdhc@114000 {
 		compatible = "fsl,t2080-esdhc", "fsl,esdhc";
 		fsl,iommu-parent = <&pamu1>;
-		fsl,liodn-reg = <&guts 0x530>; /* SDMMCLIODNR */
+		fsl,liodn-reg = <&guts 0x530>; 
 		sdhci,auto-cmd12;
 	};
+*/
 /include/ "qoriq-i2c-0.dtsi"
 /include/ "qoriq-i2c-1.dtsi"
 /include/ "qoriq-duart-0.dtsi"
@@ -588,11 +590,12 @@
 /include/ "qoriq-gpio-1.dtsi"
 /include/ "qoriq-gpio-2.dtsi"
 /include/ "qoriq-gpio-3.dtsi"
+/* remove usb
 /include/ "qoriq-usb2-mph-0.dtsi"
 	usb0: usb@210000 {
 		compatible = "fsl-usb2-mph-v2.5", "fsl-usb2-mph";
 		fsl,iommu-parent = <&pamu1>;
-		fsl,liodn-reg = <&guts 0x520>; /* USB1LIODNR */
+		fsl,liodn-reg = <&guts 0x520>; 
 		phy_type = "utmi";
 		port0;
 	};
@@ -600,10 +603,11 @@
 	usb1: usb@211000 {
 		compatible = "fsl-usb2-dr-v2.5", "fsl-usb2-dr";
 		fsl,iommu-parent = <&pamu1>;
-		fsl,liodn-reg = <&guts 0x524>; /* USB1LIODNR */
+		fsl,liodn-reg = <&guts 0x524>; 
 		dr_mode = "host";
 		phy_type = "utmi";
 	};
+*/
 /include/ "qoriq-sec5.2-0.dtsi"
 /include/ "qoriq-qman3.dtsi"
 /include/ "qoriq-bman1.dtsi"
