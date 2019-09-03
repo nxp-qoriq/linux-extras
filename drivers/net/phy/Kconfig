@@ -95,6 +95,13 @@ config MDIO_FSL_BACKPLANE
 	help
 	  This module provides a driver for Freescale XFI's backplane.
 
+config FSL_BACKPLANE_DEBUGFS
+	depends on DEBUG_FS && MDIO_FSL_BACKPLANE
+	bool "Enable backplane debugfs support"
+	default n
+	---help---
+	  Enable advanced backplane debug through debugfs interface.
+
 config MDIO_GPIO
 	tristate "GPIO lib-based bitbanged MDIO buses"
 	depends on MDIO_BITBANG && GPIOLIB
