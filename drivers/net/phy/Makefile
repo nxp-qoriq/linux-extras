@@ -33,6 +33,12 @@ obj-$(CONFIG_MDIO_CAVIUM)	+= mdio-cavium.o
 obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane.o
 obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_serdes_10g.o
 obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_serdes_28g.o
+obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_debugfs.o
+# Needed by the tracing framework
+CFLAGS_fsl_backplane.o := -I$(src)
+CFLAGS_fsl_backplane_serdes_10g.o := -I$(src)
+CFLAGS_fsl_backplane_serdes_28g.o := -I$(src)
+
 obj-$(CONFIG_MDIO_GPIO)		+= mdio-gpio.o
 obj-$(CONFIG_MDIO_HISI_FEMAC)	+= mdio-hisi-femac.o
 obj-$(CONFIG_MDIO_I2C)		+= mdio-i2c.o
