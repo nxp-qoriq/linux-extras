@@ -789,6 +789,11 @@
 			status = "disabled";
 		};
 
+		serdes1: serdes@1ea0000 {
+			reg = <0x0 0x1ea0000 0 0x00002000>;
+			compatible = "fsl,serdes-10g";
+		};
+
 		pcie_ep@3600000 {
 			compatible = "fsl,ls1046a-pcie-ep", "fsl,ls-pcie-ep";
 			reg = <0x00 0x03600000 0x0 0x00100000
