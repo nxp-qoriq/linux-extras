@@ -3,6 +3,7 @@
  * Device Tree Include file for Freescale Layerscape-1046A family SoC.
  *
  * Copyright 2016 Freescale Semiconductor, Inc.
+ * Copyright 2019 NXP
  *
  * Mingkai Hu <mingkai.hu@nxp.com>
  */
@@ -781,6 +782,11 @@
 					<0000 0 0 3 &gic GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>,
 					<0000 0 0 4 &gic GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
 			status = "disabled";
+		};
+
+		serdes1: serdes@1ea0000 {
+			reg = <0x0 0x1ea0000 0 0x00002000>;
+			compatible = "fsl,serdes-10g";
 		};
 
 		pcie_ep@3600000 {
