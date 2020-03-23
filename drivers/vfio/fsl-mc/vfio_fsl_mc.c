@@ -15,6 +15,8 @@
 
 #include "vfio_fsl_mc_private.h"
 
+static struct fsl_mc_driver vfio_fsl_mc_driver;
+
 static int vfio_fsl_mc_open(void *device_data)
 {
 	if (!try_module_get(THIS_MODULE))
@@ -84,6 +86,72 @@ static const struct vfio_device_ops vfio_fsl_mc_ops = {
 	.mmap		= vfio_fsl_mc_mmap,
 };
 
+static int vfio_fsl_mc_bus_notifier(struct notifier_block *nb,
+				    unsigned long action, void *data)
+{
+	struct vfio_fsl_mc_device *vdev = container_of(nb,
+					struct vfio_fsl_mc_device, nb);
+	struct device *dev = data;
+	struct fsl_mc_device *mc_dev = to_fsl_mc_device(dev);
+	struct fsl_mc_device *mc_cont = to_fsl_mc_device(mc_dev->dev.parent);
+
+	if (action == BUS_NOTIFY_ADD_DEVICE &&
+	    vdev->mc_dev == mc_cont) {
+		mc_dev->driver_override = kasprintf(GFP_KERNEL, "%s",
+						    vfio_fsl_mc_ops.name);
+		if (!mc_dev->driver_override)
+			dev_warn(dev, "Setting driver override for device in dprc %s failed\n",
+			     dev_name(&mc_cont->dev));
+		dev_info(dev, "Setting driver override for device in dprc %s\n",
+			 dev_name(&mc_cont->dev));
+	} else if (action == BUS_NOTIFY_BOUND_DRIVER &&
+		vdev->mc_dev == mc_cont) {
+		struct fsl_mc_driver *mc_drv = to_fsl_mc_driver(dev->driver);
+
+		if (mc_drv && mc_drv != &vfio_fsl_mc_driver)
+			dev_warn(dev, "Object %s bound to driver %s while DPRC bound to vfio-fsl-mc\n",
+				 dev_name(dev), mc_drv->driver.name);
+	}
+
+	return 0;
+}
+
+static int vfio_fsl_mc_init_device(struct vfio_fsl_mc_device *vdev)
+{
+	struct fsl_mc_device *mc_dev = vdev->mc_dev;
+	int ret;
+
+	/* Non-dprc devices share mc_io from parent */
+	if (!is_fsl_mc_bus_dprc(mc_dev)) {
+		struct fsl_mc_device *mc_cont = to_fsl_mc_device(mc_dev->dev.parent);
+
+		mc_dev->mc_io = mc_cont->mc_io;
+		return 0;
+	}
+
+	vdev->nb.notifier_call = vfio_fsl_mc_bus_notifier;
+	ret = bus_register_notifier(&fsl_mc_bus_type, &vdev->nb);
+	if (ret)
+		return ret;
+
+	/* open DPRC, allocate a MC portal */
+	ret = dprc_setup(mc_dev);
+	if (ret < 0) {
+		dev_err(&mc_dev->dev, "Failed to setup DPRC (error = %d)\n", ret);
+		bus_unregister_notifier(&fsl_mc_bus_type, &vdev->nb);
+		return ret;
+	}
+
+	ret = dprc_scan_container(mc_dev, false);
+	if (ret < 0) {
+		dev_err(&mc_dev->dev, "Container scanning failed: %d\n", ret);
+		dprc_cleanup(mc_dev);
+		bus_unregister_notifier(&fsl_mc_bus_type, &vdev->nb);
+	}
+
+	return ret;
+}
+
 static int vfio_fsl_mc_probe(struct fsl_mc_device *mc_dev)
 {
 	struct iommu_group *group;
@@ -112,6 +180,12 @@ static int vfio_fsl_mc_probe(struct fsl_mc_device *mc_dev)
 		return ret;
 	}
 
+	ret = vfio_fsl_mc_init_device(vdev);
+	if (ret < 0) {
+		vfio_iommu_group_put(group, dev);
+		return ret;
+	}
+
 	return ret;
 }
 
@@ -123,6 +197,16 @@ static int vfio_fsl_mc_remove(struct fsl_mc_device *mc_dev)
 	vdev = vfio_del_group_dev(dev);
 	if (!vdev)
 		return -EINVAL;
+
+	if (vdev->nb.notifier_call)
+		bus_unregister_notifier(&fsl_mc_bus_type, &vdev->nb);
+
+	if (is_fsl_mc_bus_dprc(mc_dev)) {
+		dprc_remove_devices(mc_dev, NULL, 0);
+		dprc_cleanup(mc_dev);
+	}
+
+	mc_dev->mc_io = NULL;
 
 	vfio_iommu_group_put(mc_dev->dev.iommu_group, dev);
 
