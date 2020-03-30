@@ -223,6 +223,9 @@ struct dpa_buffer_layout_s {
 #define DPAA_WOL_MAGIC		0x00000001
 #endif
 
+
+#define SP_ATTR_SIZE  (2 * (sizeof(uint32_t)))
+
 #if defined(CONFIG_FSL_SDK_FMAN_TEST)
 struct pcd_range {
 	uint32_t			 base;
@@ -431,6 +434,10 @@ struct fm_port_fqs {
 extern struct net_device *dpa_loop_netdevs[20];
 #endif
 
+enum qman_cb_dqrr_result __hot
+priv_tx_conf_default_dqrr(struct qman_portal		*portal,
+			struct qman_fq			*fq,
+			const struct qm_dqrr_entry	*dq);
 /* functions with different implementation for SG and non-SG: */
 int dpa_bp_priv_seed(struct dpa_bp *dpa_bp);
 int dpaa_eth_refill_bpools(struct dpa_bp *dpa_bp, int *count_ptr);

@@ -180,7 +180,7 @@ netdev_alloc_failed:
 }
 
 /* Cold path wrapper over _dpa_bp_add_8_bufs(). */
-static void dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp, int cpu)
+void dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp, int cpu)
 {
 	int *count_ptr = per_cpu_ptr(dpa_bp->percpu_count, cpu);
 	*count_ptr += _dpa_bp_add_8_bufs(dpa_bp);
@@ -396,7 +396,7 @@ EXPORT_SYMBOL(dpa_buf_is_recyclable);
  * We are guaranteed there is enough room at the end of the data buffer to
  * accommodate the shared info area of the skb.
  */
-static struct sk_buff *__hot contig_fd_to_skb(const struct dpa_priv_s *priv,
+struct sk_buff *__hot contig_fd_to_skb(const struct dpa_priv_s *priv,
 	const struct qm_fd *fd, int *use_gro)
 {
 	dma_addr_t addr = qm_fd_addr(fd);
@@ -454,7 +454,7 @@ static struct sk_buff *__hot contig_fd_to_skb(const struct dpa_priv_s *priv,
  *
  * The page fragment holding the S/G Table is recycled here.
  */
-static struct sk_buff *__hot sg_fd_to_skb(const struct dpa_priv_s *priv,
+struct sk_buff *__hot sg_fd_to_skb(const struct dpa_priv_s *priv,
 			       const struct qm_fd *fd, int *use_gro,
 			       int *count_ptr)
 {

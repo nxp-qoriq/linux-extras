@@ -39,12 +39,16 @@
 #include <linux/net_tstamp.h>	/* struct hwtstamp_config */
 
 extern uint8_t advanced_debug;
-extern const struct dpa_fq_cbs_t shared_fq_cbs;
+extern  struct dpa_fq_cbs_t shared_fq_cbs;
 extern int __hot dpa_shared_tx(struct sk_buff *skb, struct net_device *net_dev);
+extern int __hot dpa_peer_tx(struct sk_buff *skb, struct net_device *net_dev);
 
 struct dpa_bp * __cold __must_check /* __attribute__((nonnull)) */
 dpa_bp_probe(struct platform_device *_of_dev, size_t *count);
 int dpa_bp_create(struct net_device *net_dev, struct dpa_bp *dpa_bp,
 		size_t count);
+int dpa_bp_shared_port_seed(struct dpa_bp *bp);
+int dpa_bp_macless_port_seed(struct dpa_bp *bp);
+void dpa_bp_add_8_bufs(const struct dpa_bp *dpa_bp, int cpu);
 
 #endif /* __DPAA_ETH_BASE_H */

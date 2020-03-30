@@ -1,5 +1,5 @@
 /* Copyright 2008-2013 Freescale Semiconductor, Inc.
- * Copyright 2017 NXP
+ * Copyright  2017,2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -94,6 +94,8 @@ dpa_bp_probe(struct platform_device *_of_dev, size_t *count)
 		return ERR_PTR(-ENOMEM);
 	}
 
+	dpa_bp->percpu_count = devm_alloc_percpu(dev, *dpa_bp->percpu_count);
+
 	dev_node = of_find_node_by_path("/");
 	if (unlikely(dev_node == NULL)) {
 		dev_err(dev, "of_find_node_by_path(/) failed\n");
@@ -165,6 +167,84 @@ _return_of_node_put:
 	return dpa_bp;
 }
 EXPORT_SYMBOL(dpa_bp_probe);
+
+
+
+int dpa_bp_macless_port_seed(struct dpa_bp *bp)
+{
+	int i;
+
+	/* Give each CPU an allotment of "config_count" buffers */
+	for_each_possible_cpu(i) {
+		int j;
+
+		/* Although we access another CPU's counters here
+		 * we do it at boot time so it is safe
+		 */
+		for (j = 0; j < bp->config_count; j += 8)
+			dpa_bp_add_8_bufs(bp, i);
+	}
+	return 0;
+}
+EXPORT_SYMBOL(dpa_bp_macless_port_seed);
+
+int dpa_bp_shared_port_seed(struct dpa_bp *bp)
+{
+	void __iomem **ptr;
+
+	/* In MAC-less and Shared-MAC scenarios the physical
+	 * address of the buffer pool in device tree is set
+	 * to 0 to specify that another entity (USDPAA) will
+	 * allocate and seed the buffers
+	 */
+	if (!bp->paddr)
+		return 0;
+
+	/* allocate memory region for buffers */
+	devm_request_mem_region(bp->dev, bp->paddr,
+			bp->size * bp->config_count, KBUILD_MODNAME);
+	/* managed ioremap unmapping */
+	ptr = devres_alloc(devm_ioremap_release, sizeof(*ptr), GFP_KERNEL);
+	if (!ptr)
+		return -EIO;
+#ifndef CONFIG_PPC
+	bp->vaddr = ioremap_cache_ns(bp->paddr, bp->size * bp->config_count);
+#else
+	bp->vaddr = ioremap_prot(bp->paddr, bp->size * bp->config_count, 0);
+#endif
+	if (bp->vaddr == NULL) {
+		pr_err("Could not map memory for pool %d\n", bp->bpid);
+		devres_free(ptr);
+		return -EIO;
+	}
+	*ptr = bp->vaddr;
+	devres_add(bp->dev, ptr);
+
+	/* seed pool with buffers from that memory region */
+	if (bp->seed_pool) {
+		int count = bp->target_count;
+		dma_addr_t addr = bp->paddr;
+
+		while (count) {
+			struct bm_buffer bufs[8];
+			uint8_t num_bufs = 0;
+
+			do {
+				BUG_ON(addr > 0xffffffffffffull);
+				bufs[num_bufs].bpid = bp->bpid;
+				bm_buffer_set64(&bufs[num_bufs++], addr);
+				addr += bp->size;
+
+			} while (--count && (num_bufs < 8));
+
+			while (bman_release(bp->pool, bufs, num_bufs, 0))
+				cpu_relax();
+		}
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(dpa_bp_shared_port_seed);
 
 int dpa_bp_create(struct net_device *net_dev, struct dpa_bp *dpa_bp,
 		size_t count)

@@ -1,5 +1,5 @@
 /* Copyright 2008-2013 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -73,6 +73,12 @@
 #include "dpaa_debugfs.h"
 #endif /* CONFIG_FSL_DPAA_DBG_LOOP */
 
+
+#include "fm_vsp_ext.h"
+#include <lnxwrp_fm.h>
+
+
+
 /* CREATE_TRACE_POINTS only needs to be defined once. Other dpa files
  * using trace events only need to #include <trace/events/sched.h>
  */
@@ -116,6 +122,73 @@ EXPORT_SYMBOL(dpaa_errata_a010022);
 #define DPAA_ETH_MAX_PAD (L1_CACHE_BYTES * 8)
 
 static uint8_t dpa_priv_common_bpid;
+
+static int peer_storage_porfile_config(struct net_device *net_dev,
+				       struct dpa_bp *dpa_bp,
+				       const void *off,
+				       uint32_t count)
+{
+
+	t_FmVspParams           fmVspParams;
+	t_LnxWrpFmDev           *p_LnxWrpFmDev;
+	t_LnxWrpFmPortDev *port = NULL;
+	t_Handle vsp_h;
+
+	const struct dpa_priv_s *priv;
+	int			 _errno, loop;
+
+	priv = netdev_priv(net_dev);
+
+	for (loop = 0; loop < count; loop++) {
+		memset(&fmVspParams, 0, sizeof(fmVspParams));
+		port = (t_LnxWrpFmPortDev *)priv->mac_dev->port_dev[RX];
+		p_LnxWrpFmDev = ((t_LnxWrpFmDev *)port->h_LnxWrpFmDev);
+		fmVspParams.h_Fm = p_LnxWrpFmDev->h_Dev;
+		fmVspParams.portParams.portType = port->settings.param.portType;
+		fmVspParams.portParams.portId   = port->settings.param.portId;
+		fmVspParams.relativeProfileId   = loop + 1;
+		fmVspParams.extBufPools.numOfPoolsUsed = 1;
+
+		fmVspParams.extBufPools.extBufPool[0].id = be32_to_cpup(off +
+							   loop * SP_ATTR_SIZE);
+		fmVspParams.extBufPools.extBufPool[0].size = be32_to_cpup(off +
+							     loop * SP_ATTR_SIZE
+							      + sizeof(__be32));
+
+		vsp_h = FM_VSP_Config(&fmVspParams);
+		if (!vsp_h) {
+			_errno = -EINVAL;
+			netdev_err(net_dev, "FM_VSP_Config failed %d\n",
+				    _errno);
+			goto out;
+		}
+
+		_errno = FM_VSP_ConfigBufferPrefixContent(vsp_h, &port->buffPrefixContent);
+		if (_errno) {
+			_errno = -EINVAL;
+			netdev_err(net_dev, "FM_VSP_ConfigBufferPrefixContent failed %d\n",
+				    _errno);
+			goto out;
+		}
+
+		_errno = FM_VSP_Init(vsp_h);
+		if (_errno) {
+			_errno = -EINVAL;
+			netdev_err(net_dev, "FM_VSP_Init failed %d\n", _errno);
+			goto out;
+		}
+
+		pr_info("fsl_dpa: Configured storage profile -relative id %u bpid %u size %u for %s\n",
+			loop + 1,
+			fmVspParams.extBufPools.extBufPool[0].id ,
+			fmVspParams.extBufPools.extBufPool[0].size,
+			net_dev->name);
+	}
+	return 0;
+
+out:
+	return _errno;
+}
 
 #ifdef CONFIG_FSL_DPAA_DBG_LOOP
 struct net_device *dpa_loop_netdevs[20];
@@ -905,7 +978,7 @@ static int dpa_new_loop_id(void)
 static int
 dpaa_eth_priv_probe(struct platform_device *_of_dev)
 {
-	int err = 0, i, channel;
+	int err = 0, i, channel, ret;
 	struct device *dev;
 	struct device_node *dpa_node;
 	struct dpa_bp *dpa_bp;
@@ -916,6 +989,7 @@ dpaa_eth_priv_probe(struct platform_device *_of_dev)
 	struct fm_port_fqs port_fqs;
 	struct dpa_buffer_layout_s *buf_layout = NULL;
 	struct mac_device *mac_dev;
+	const void *profile_off = NULL;
 
 	dev = &_of_dev->dev;
 
@@ -1093,11 +1167,25 @@ dpaa_eth_priv_probe(struct platform_device *_of_dev)
 
 	pr_info("fsl_dpa: Probed interface %s\n", net_dev->name);
 
+	if ((profile_off = of_get_property(dpa_node, "fsl,vsp-init", &ret))) {
+		err = peer_storage_porfile_config(priv->net_dev , dpa_bp,
+						  profile_off,
+						  ret / SP_ATTR_SIZE);
+		if (err)
+			goto vsp_config_failed;
+
+		pr_info("fsl_dpa: Storage profile applied on interface %s\n",
+			net_dev->name);
+	}
+
+
+
 	return 0;
 
 netdev_init_failed:
 napi_add_failed:
 	dpa_private_napi_del(net_dev);
+vsp_config_failed:
 alloc_percpu_failed:
 #ifdef CONFIG_FMAN_PFC
 pfc_mapping_failed:
