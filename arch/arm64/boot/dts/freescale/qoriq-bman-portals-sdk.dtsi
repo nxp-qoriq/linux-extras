@@ -2,7 +2,7 @@
  * QorIQ BMan SDK Portals device tree nodes
  *
  * Copyright 2011-2016 Freescale Semiconductor Inc.
- * Copyright 2017 NXP
+ * Copyright 2017,2020 NXP
  *
  * SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
  */
@@ -39,17 +39,8 @@
 	bman-portal@70000 {
 		cell-index = <7>;
 	};
-
-	bman-portal@80000 {
-		cell-index = <8>;
-	};
-
-	bman-portal@90000 {
-		cell-index = <9>;
-	};
-
 	 bman-bpids@0 {
 		compatible = "fsl,bpid-range";
-		fsl,bpid-range = <32 32>;
+		fsl,bpid-range = <32 16>;
 	};
 };

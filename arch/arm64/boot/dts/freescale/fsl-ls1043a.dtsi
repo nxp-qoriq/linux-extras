@@ -3,7 +3,7 @@
  * Device Tree Include file for Freescale Layerscape-1043A family SoC.
  *
  * Copyright 2014-2015 Freescale Semiconductor, Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *
  * Mingkai Hu <Mingkai.hu@freescale.com>
  */
@@ -29,6 +29,26 @@
 		ethernet6 = &enet6;
 	};
 
+	chosen {
+               name = "chosen";
+
+               dpaa-extended-args {
+                       fman0-extd-args {
+                               cell-index = <0>;
+                               compatible = "fsl,fman-extended-args";
+                               dma-aid-mode = "port";
+
+
+                               fman0_rx3-extd-args {
+                                       cell-index = <3>;
+                                       compatible = "fsl,fman-port-1g-rx-extended-args";
+                                       /* Define Virtual storage profile */
+                                       /* <number of profiles, default profile id> */
+                                       vsp-window = <2 0>;
+                               };
+                       };
+               };
+       };
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -132,6 +152,11 @@
 			alignment = <0 0x2000000>;
 			no-map;
 		};
+		jailhouse: jailhouse {
+			reg = <0x0 0xe0000000 0x0 0x20000000>;
+			no-map;
+			status = "okay";
+		};
 	};
 
 	sysclk: sysclk {
@@ -175,10 +200,10 @@
 		compatible = "arm,gic-400";
 		#interrupt-cells = <3>;
 		interrupt-controller;
-		reg = <0x0 0x1401000 0 0x1000>, /* GICD */
-		      <0x0 0x1402000 0 0x2000>, /* GICC */
-		      <0x0 0x1404000 0 0x2000>, /* GICH */
-		      <0x0 0x1406000 0 0x2000>; /* GICV */
+		reg = <0x0 0x1410000 0 0x10000>, /* GICD */
+		      <0x0 0x1420000 0 0x20000>, /* GICC */
+		      <0x0 0x1440000 0 0x20000>, /* GICH */
+		      <0x0 0x1460000 0 0x20000>; /* GICV */
 		interrupts = <1 9 0xf08>;
 	};
 
