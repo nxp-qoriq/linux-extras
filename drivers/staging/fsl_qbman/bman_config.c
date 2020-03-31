@@ -284,6 +284,7 @@ static int __init fsl_bman_init(struct device_node *node)
 	int ret, standby = 0;
 	u16 id;
 	u8 major, minor;
+	const u32 *is_init;
 
 	ret = of_address_to_resource(node, 0, &res);
 	if (ret) {
@@ -297,6 +298,12 @@ static int __init fsl_bman_init(struct device_node *node)
 	/* Global configuration */
 	regs = ioremap(res.start, res.end - res.start + 1);
 	bm = bm_create(regs);
+	is_init = of_get_property(node,
+	                        "fsl,bpool-init", &ret);
+	if (!!is_init) {
+		pr_info("BMAN already initialized in other partition\n");
+		return 0;
+	}
 	BUG_ON(!bm);
 	bm_node = node;
 	bm_get_version(bm, &id, &major, &minor);
