@@ -84,9 +84,181 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev);
 static netdev_features_t
 dpa_macless_fix_features(struct net_device *dev, netdev_features_t features);
 
+struct sk_buff *__hot contig_fd_to_skb(const struct dpa_priv_s *priv,
+	const struct qm_fd *fd, int *use_gro);
+
+struct sk_buff *__hot sg_fd_to_skb(const struct dpa_priv_s *priv,
+			       const struct qm_fd *fd, int *use_gro,
+			       int *count_ptr);
+
 void priv_ern(struct qman_portal	*portal,
 		       struct qman_fq		*fq,
 		       const struct qm_mr_entry	*msg);
+
+/* forward declarations */
+static enum qman_cb_dqrr_result __hot
+macless_rx_dqrr(struct qman_portal *portal, struct qman_fq *fq,
+		const struct qm_dqrr_entry *dq);
+static void macless_ern(struct qman_portal	*portal,
+		       struct qman_fq		*fq,
+		       const struct qm_mr_entry	*msg);
+
+static int __hot dpa_peer_tx(struct sk_buff *skb, struct net_device *net_dev)
+{
+	struct dpa_priv_s	*priv;
+	const int queue_mapping = dpa_get_queue_mapping(skb);
+	struct qman_fq *egress_fq, *conf_fq;
+
+#ifdef CONFIG_FSL_DPAA_HOOKS
+	/* If there is a Tx hook, run it. */
+	if (dpaa_eth_hooks.tx &&
+		dpaa_eth_hooks.tx(skb, net_dev) == DPAA_ETH_STOLEN)
+		/* won't update any Tx stats */
+		return NETDEV_TX_OK;
+#endif
+
+	priv = netdev_priv(net_dev);
+#ifdef CONFIG_FSL_DPAA_CEETM
+	if (priv->ceetm_en)
+		return ceetm_tx(skb, net_dev);
+#endif
+
+	egress_fq = priv->egress_fqs[queue_mapping];
+	conf_fq = priv->conf_fqs[queue_mapping];
+
+	return dpa_tx_extended(skb, net_dev, egress_fq, conf_fq);
+}
+
+static enum qman_cb_dqrr_result __hot
+macless_rx_dqrr(struct qman_portal *portal, struct qman_fq *fq,
+		const struct qm_dqrr_entry *dq)
+{
+	struct net_device		*net_dev;
+	struct dpa_priv_s		*priv;
+	struct dpa_percpu_priv_s	*percpu_priv;
+	int                             *count_ptr;
+	const struct qm_fd *fd = &dq->fd;
+	struct dpa_bp *dpa_bp;
+	struct sk_buff *skb;
+	dma_addr_t addr;
+	int use_gro;
+
+	net_dev = ((struct dpa_fq *)fq)->net_dev;
+	priv = netdev_priv(net_dev);
+	dpa_bp = dpa_bpid2pool(fd->bpid);
+	BUG_ON(!dpa_bp);
+
+	//printk("from BPID %d\n", fd->bpid);
+
+	use_gro = net_dev->features & NETIF_F_GRO;
+
+	addr = qm_fd_addr(fd);
+
+
+	percpu_priv = raw_cpu_ptr(priv->percpu_priv);
+	count_ptr = raw_cpu_ptr(dpa_bp->percpu_count);
+
+	if (unlikely(dpaa_eth_napi_schedule(percpu_priv, portal)))
+			return qman_cb_dqrr_stop;
+
+
+	if (unlikely(dpaa_eth_refill_bpools(dpa_bp, count_ptr))) {
+		/* Unable to refill the buffer pool due to insufficient
+		 * system memory. Just release the frame back into the pool,
+		 * otherwise we'll soon end up with an empty buffer pool.
+		 */
+		dpa_fd_release(net_dev, &dq->fd);
+
+	/* this label is confusing*/
+	goto out;
+	}
+
+	if (unlikely(fd->status & FM_FD_STAT_RX_ERRORS) != 0) {
+		if (netif_msg_hw(priv) && net_ratelimit())
+			netdev_warn(net_dev, "FD status = 0x%08x\n",
+					fd->status & FM_FD_STAT_RX_ERRORS);
+
+		percpu_priv->stats.rx_errors++;
+		dpa_fd_release(net_dev, fd);
+		goto out;
+	}
+	/* prefetch the first 64 bytes of the frame or the SGT start */
+	dma_unmap_single(dpa_bp->dev, addr, dpa_bp->size, DMA_BIDIRECTIONAL);
+	prefetch(phys_to_virt(addr) + dpa_fd_offset(fd));
+
+	/* The only FD types that we may receive are contig and S/G */
+	DPA_BUG_ON((fd->format != qm_fd_contig) && (fd->format != qm_fd_sg));
+
+	if (likely(fd->format == qm_fd_contig)) {
+#ifdef CONFIG_FSL_DPAA_HOOKS
+		/* Execute the Rx processing hook, if it exists. */
+		if (dpaa_eth_hooks.rx_default &&
+			dpaa_eth_hooks.rx_default((void *)fd, net_dev,
+					fqid) == DPAA_ETH_STOLEN) {
+			/* won't count the rx bytes in */
+			return;
+		}
+#endif
+		skb = contig_fd_to_skb(priv, fd, &use_gro);
+	} else {
+		skb = sg_fd_to_skb(priv, fd, &use_gro, count_ptr);
+		percpu_priv->rx_sg++;
+	}
+
+	(*count_ptr)--;
+	skb->protocol = eth_type_trans(skb, net_dev);
+
+	if (use_gro) {
+		gro_result_t gro_result;
+		const struct qman_portal_config *pc =
+					qman_p_get_portal_config(portal);
+		struct dpa_napi_portal *np = &percpu_priv->np[pc->index];
+
+		np->p = portal;
+		gro_result = napi_gro_receive(&np->napi, skb);
+		/* If frame is dropped by the stack, rx_dropped counter is
+		 * incremented automatically, so no need for us to update it
+		 */
+		if (unlikely(gro_result == GRO_DROP))
+			goto out;
+
+	} else if (unlikely(netif_receive_skb(skb) == NET_RX_DROP))
+		goto out;
+
+	percpu_priv->stats.rx_packets++;
+	percpu_priv->stats.rx_bytes += dpa_fd_length(fd);
+
+out:
+	return qman_cb_dqrr_consume;
+}
+
+static void macless_ern(struct qman_portal	*portal,
+		       struct qman_fq		*fq,
+		       const struct qm_mr_entry	*msg)
+{
+	struct net_device *net_dev;
+	const struct dpa_priv_s	*priv;
+	struct dpa_percpu_priv_s *percpu_priv;
+	struct dpa_fq *dpa_fq = (struct dpa_fq *)fq;
+
+	net_dev = dpa_fq->net_dev;
+	priv = netdev_priv(net_dev);
+	percpu_priv = raw_cpu_ptr(priv->percpu_priv);
+
+	dpa_fd_release(net_dev, &msg->ern.fd);
+
+	percpu_priv->stats.tx_dropped++;
+	percpu_priv->stats.tx_fifo_errors++;
+	count_ern(percpu_priv, msg);
+}
+
+struct dpa_fq_cbs_t macless_fq_cbs = {
+	.rx_defq = { .cb = { .dqrr = macless_rx_dqrr } },
+	.tx_defq = { .cb = { .dqrr = priv_tx_conf_default_dqrr } },
+	.rx_errq = { .cb = { .dqrr = macless_rx_dqrr } },
+	.tx_errq = { .cb = { .dqrr = priv_tx_conf_error_dqrr } },
+	.egress_ern = { .cb = { .ern = macless_ern } }
+};
 
 static const struct net_device_ops dpa_macless_ops = {
 	.ndo_open = dpa_macless_start,
@@ -127,44 +299,6 @@ static const char macless_frame_queues[][25] = {
 	[RX] = "fsl,qman-frame-queues-rx",
 	[TX] = "fsl,qman-frame-queues-tx"
 };
-
-static void * dpa_macless_get_peer(struct platform_device *_of_dev)
-{
-	struct device		*dev;
-	const phandle		*peer_prop;
-	struct device_node	*peer_node;
-	struct platform_device	*of_dev;
-	struct net_device *net_dev;
-	struct dpa_priv_s	*priv;
-
-	int lenp;
-
-	dev = &_of_dev->dev;
-
-	peer_prop = of_get_property(dev->of_node, "peer", &lenp);
-		if (!peer_prop)
-			return ERR_PTR(-EINVAL);
-
-	peer_node = of_find_node_by_phandle(be32_to_cpu(*peer_prop));
-	if (!peer_node) {
-		dev_err(dev, "Cannot find peer node\n");
-		return  ERR_PTR(-EPROBE_DEFER);
-	}
-
-	of_dev = of_find_device_by_node(peer_node);
-	if (unlikely(of_dev == NULL)) {
-		dev_err(dev, "of_find_device_by_node(%s) failed\n",
-				peer_node->full_name);
-		of_node_put(peer_node);
-		return ERR_PTR(-EINVAL);
-	}
-
-	dev = &of_dev->dev;
-	net_dev = dev_get_drvdata(dev);
-	priv = netdev_priv(net_dev);
-
-	return net_dev;
-}
 
 static void dpaa_macless_napi_enable(struct dpa_priv_s *priv)
 {
@@ -321,7 +455,7 @@ static int dpa_tx_conf_fq_macless_setup(struct net_device *macless_net_dev, stru
 {
 
 	struct dpa_fq	*dpa_fq;
-	uint32_t fqid = 0, loop = 0, conf_cnt = 0;
+	uint32_t loop = 0, conf_cnt = 0;
 	int errno = 0;
 	struct dpa_priv_s *priv = NULL;
 	struct dpa_priv_s *macless_priv;
@@ -604,8 +738,8 @@ static int dpaa_eth_macless_probe(struct platform_device *_of_dev)
 	dpaa_eth_add_channel(priv->channel);
 
 	/* changed ern callback in case of congestion */
-	shared_fq_cbs.egress_ern.cb.ern = priv_ern;
-	dpa_fq_setup(priv, &shared_fq_cbs, NULL);
+	macless_fq_cbs.egress_ern.cb.ern = priv_ern;
+	dpa_fq_setup(priv, &macless_fq_cbs, NULL);
 
 	/* Add the FQs to the interface, and make them active */
 	/* For MAC-less devices we only get here for RX frame queues

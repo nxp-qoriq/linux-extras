@@ -41,7 +41,6 @@
 extern uint8_t advanced_debug;
 extern  struct dpa_fq_cbs_t shared_fq_cbs;
 extern int __hot dpa_shared_tx(struct sk_buff *skb, struct net_device *net_dev);
-extern int __hot dpa_peer_tx(struct sk_buff *skb, struct net_device *net_dev);
 
 struct dpa_bp * __cold __must_check /* __attribute__((nonnull)) */
 dpa_bp_probe(struct platform_device *_of_dev, size_t *count);

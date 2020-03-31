@@ -438,6 +438,11 @@ enum qman_cb_dqrr_result __hot
 priv_tx_conf_default_dqrr(struct qman_portal		*portal,
 			struct qman_fq			*fq,
 			const struct qm_dqrr_entry	*dq);
+
+enum qman_cb_dqrr_result
+priv_tx_conf_error_dqrr(struct qman_portal		*portal,
+		      struct qman_fq			*fq,
+		      const struct qm_dqrr_entry	*dq);
 /* functions with different implementation for SG and non-SG: */
 int dpa_bp_priv_seed(struct dpa_bp *dpa_bp);
 int dpaa_eth_refill_bpools(struct dpa_bp *dpa_bp, int *count_ptr);
