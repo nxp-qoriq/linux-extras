@@ -2,7 +2,7 @@
  * Device Tree Include file for Freescale Layerscape-1043A family SoC.
  *
  * Copyright 2014-2015 Freescale Semiconductor, Inc.
- * Copyright 2018-2019 NXP
+ * Copyright 2018-2020 NXP
  *
  * Mingkai Hu <Mingkai.hu@freescale.com>
  *
@@ -89,6 +89,14 @@ pcie@3600000 {
 &fman0 {
 	compatible = "fsl,fman", "simple-bus";
 };
+
+&eth_root_cell {
+                /* pool id, buffer size*/
+                fsl,vsp-init = <0x10 1728>;
+                fsl,qman-frame-queues-rx = <0xca0 0x1 0xca1 0x1 0xda8 0x8>;
+                fsl,qman-frame-queues-tx = <0xca2 0x1 0xca3 0x1 0xfa8 0x8>;
+};
+
 
 &clockgen {
 	dma-coherent;

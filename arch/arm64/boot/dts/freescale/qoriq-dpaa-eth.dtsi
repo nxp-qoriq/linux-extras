@@ -49,15 +49,11 @@ fsldpaa: fsl,dpaa {
 		fsl,fman-mac = <&enet2>;
 		dma-coherent;
 	};
-	ethernet@3 {
-		compatible = "fsl,dpa-ethernet";
-		fsl,fman-mac = <&enet3>;
-		dma-coherent;
-			/* pool id, buffer size*/
-                        fsl,vsp-init = <0x10 1728>;
-                        fsl,qman-frame-queues-rx = <0xca0 0x1 0xca1 0x1 0xda8 0x8>;
-                        fsl,qman-frame-queues-tx = <0xca2 0x1 0xca3 0x1 0xfa8 0x8>;
-                };
+	eth_root_cell:	ethernet@3 {
+				compatible = "fsl,dpa-ethernet";
+				fsl,fman-mac = <&enet3>;
+				dma-coherent;
+			};
 	ethernet@4 {
 		compatible = "fsl,dpa-ethernet";
 		fsl,fman-mac = <&enet4>;
