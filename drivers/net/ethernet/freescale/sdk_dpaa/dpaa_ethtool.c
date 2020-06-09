@@ -564,7 +564,7 @@ static int dpaa_get_ts_info(struct net_device *net_dev,
 	return 0;
 }
 
-const struct ethtool_ops dpa_ethtool_ops = {
+struct ethtool_ops dpa_ethtool_ops = {
 	.get_link_ksettings = dpa_get_ksettings,
 	.set_link_ksettings = dpa_set_ksettings,
 	.get_drvinfo = dpa_get_drvinfo,

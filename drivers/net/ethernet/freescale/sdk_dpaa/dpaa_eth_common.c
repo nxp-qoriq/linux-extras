@@ -112,6 +112,10 @@ int dpa_netdev_init(struct net_device *net_dev,
 	memcpy(net_dev->perm_addr, mac_addr, net_dev->addr_len);
 	memcpy(net_dev->dev_addr, mac_addr, net_dev->addr_len);
 
+	/* for devices that do not have a MAC, do not set ts callback function */
+	if (!priv->mac_dev)
+		dpa_ethtool_ops.get_ts_info = NULL;
+
 	net_dev->ethtool_ops = &dpa_ethtool_ops;
 
 	net_dev->needed_headroom = priv->tx_headroom;

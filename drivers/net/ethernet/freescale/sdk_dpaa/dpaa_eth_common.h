@@ -102,7 +102,7 @@ typedef enum dpaa_eth_hook_result (*dpaa_eth_confirm_hook_t)(
 extern u16 qman_portal_max;
 
 /* from dpa_ethtool.c */
-extern const struct ethtool_ops dpa_ethtool_ops;
+extern struct ethtool_ops dpa_ethtool_ops;
 
 #ifdef CONFIG_FSL_DPAA_HOOKS
 /* Various hooks used for unit-testing and/or fastpath optimizations.
