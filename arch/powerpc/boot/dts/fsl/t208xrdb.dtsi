@@ -2,6 +2,7 @@
  * T2080PCIe-RDB Board Device Tree Source
  *
  * Copyright 2014 Freescale Semiconductor Inc.
+ * Copyright 2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -74,12 +75,14 @@
 			device-width = <1>;
 		};
 
+		/* remove nand
 		nand@1,0 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "fsl,ifc-nand";
 			reg = <0x2 0x0 0x10000>;
 		};
+		*/
 
 		boardctrl: board-control@2,0 {
 			#address-cells = <1>;
@@ -144,9 +147,11 @@
 			};
 		};
 
+		/* remove sdhc
 		sdhc@114000 {
 			voltage-ranges = <1800 1800 3300 3300>;
 		};
+		*/
 	};
 
 	pci0: pcie@ffe240000 {

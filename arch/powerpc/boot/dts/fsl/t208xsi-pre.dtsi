@@ -2,6 +2,7 @@
  * T2080/T2081 Silicon/SoC Device Tree Source (pre include)
  *
  * Copyright 2013 Freescale Semiconductor Inc.
+ * Copyright 2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -66,12 +67,16 @@
 		pci1 = &pci1;
 		pci2 = &pci2;
 		pci3 = &pci3;
+		/* remove usb
 		usb0 = &usb0;
 		usb1 = &usb1;
+		*/
 		dma0 = &dma0;
 		dma1 = &dma1;
 		dma2 = &dma2;
+		/* remove sdhc
 		sdhc = &sdhc;
+		*/
 	};
 
 	cpus {
