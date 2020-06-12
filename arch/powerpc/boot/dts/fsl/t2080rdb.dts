@@ -2,6 +2,7 @@
  * T2080PCIe-RDB Board Device Tree Source
  *
  * Copyright 2014 - 2015 Freescale Semiconductor Inc.
+ * Copyright 2018-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -77,13 +78,15 @@
 		};
 
 		ethernet@f0000 {
+			/* removed for KR:
 			phy-handle = <&xg_cs4315_phy2>;
-			phy-connection-type = "xgmii";
+			phy-connection-type = "xgmii"; */
 		};
 
 		ethernet@f2000 {
+			/* removed for KR:
 			phy-handle = <&xg_cs4315_phy1>;
-			phy-connection-type = "xgmii";
+			phy-connection-type = "xgmii"; */
 		};
 
 		mdio@fc000 {
