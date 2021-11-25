@@ -6,6 +6,7 @@
  * Author: Andy Fleming
  *
  * Copyright (c) 2004 Freescale Semiconductor, Inc.
+ * Copyright 2021 NXP
  */
 
 #ifndef __PHY_H
@@ -111,6 +112,8 @@ extern const int phy_10gbit_features_array[1];
  * @PHY_INTERFACE_MODE_10GBASER: 10G BaseR
  * @PHY_INTERFACE_MODE_USXGMII:  Universal Serial 10GE MII
  * @PHY_INTERFACE_MODE_10GKR: 10GBASE-KR - with Clause 73 AN
+ * @PHY_INTERFACE_MODE_25GKR: 25GBASE-KR
+ * @PHY_INTERFACE_MODE_40GKR4: 40GBASE-KR4
  * @PHY_INTERFACE_MODE_MAX: Book keeping
  *
  * Describes the interface between the MAC and PHY.
@@ -145,6 +148,8 @@ typedef enum {
 	/* 10GBASE-KR - with Clause 73 AN */
 	PHY_INTERFACE_MODE_10GKR,
 	PHY_INTERFACE_MODE_2500SGMII,
+	PHY_INTERFACE_MODE_25GKR,
+	PHY_INTERFACE_MODE_40GKR4,
 	PHY_INTERFACE_MODE_MAX,
 } phy_interface_t;
 
@@ -220,6 +225,10 @@ static inline const char *phy_modes(phy_interface_t interface)
 		return "10gbase-kr";
 	case PHY_INTERFACE_MODE_2500SGMII:
 		return "sgmii-2500";
+	case PHY_INTERFACE_MODE_25GKR:
+		return "25gbase-kr";
+	case PHY_INTERFACE_MODE_40GKR4:
+		return "40gbase-kr4";
 	default:
 		return "unknown";
 	}

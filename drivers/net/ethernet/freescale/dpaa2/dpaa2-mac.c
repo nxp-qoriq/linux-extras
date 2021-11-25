@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
-/* Copyright 2019 NXP */
+/* Copyright 2019, 2021 NXP */
 
 #include <linux/fsl/mc.h>
 #include <linux/msi.h>
@@ -153,6 +153,21 @@ static void dpaa2_mac_validate(struct phylink_config *config,
 
 	switch (state->interface) {
 	case PHY_INTERFACE_MODE_NA:
+	case PHY_INTERFACE_MODE_10GKR:
+		phylink_set(mask, 10000baseKR_Full);
+		if (state->interface != PHY_INTERFACE_MODE_NA)
+			break;
+		fallthrough;
+	case PHY_INTERFACE_MODE_25GKR:
+		phylink_set(mask, 25000baseKR_Full);
+		if (state->interface != PHY_INTERFACE_MODE_NA)
+			break;
+		fallthrough;
+	case PHY_INTERFACE_MODE_40GKR4:
+		phylink_set(mask, 40000baseKR4_Full);
+		if (state->interface != PHY_INTERFACE_MODE_NA)
+			break;
+		fallthrough;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_USXGMII:
 		phylink_set(mask, 10000baseT_Full);
@@ -270,12 +285,30 @@ static const struct phylink_mac_ops dpaa2_mac_phylink_ops = {
 	.mac_link_down = dpaa2_mac_link_down,
 };
 
+static bool dpaa2_mac_is_kr(struct dpaa2_mac *mac)
+{
+	switch (mac->if_mode) {
+	case PHY_INTERFACE_MODE_10GKR:
+	case PHY_INTERFACE_MODE_25GKR:
+	case PHY_INTERFACE_MODE_40GKR4:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int dpaa2_pcs_create(struct dpaa2_mac *mac,
 			    struct fwnode_handle *dpmac_node,
 			    int id)
 {
 	struct mdio_device *mdiodev;
 	struct fwnode_handle *node;
+
+	/* If this interface is -KR then the PCS is treated as a PHY, thus a
+	 * phylink integrated PCS does not need to be created.
+	 */
+	if (dpaa2_mac_is_kr(mac))
+		return 0;
 
 	node = fwnode_find_reference(dpmac_node, "pcs-handle", 0);
 	if (IS_ERR(node)) {
