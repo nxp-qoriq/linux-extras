@@ -29,3 +29,12 @@ obj-$(CONFIG_MDIO_BUS_MUX_GPIO)		+= mdio-mux-gpio.o
 obj-$(CONFIG_MDIO_BUS_MUX_MESON_G12A)	+= mdio-mux-meson-g12a.o
 obj-$(CONFIG_MDIO_BUS_MUX_MMIOREG) 	+= mdio-mux-mmioreg.o
 obj-$(CONFIG_MDIO_BUS_MUX_MULTIPLEXER) 	+= mdio-mux-multiplexer.o
+
+obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane.o
+obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_serdes_10g.o
+obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_serdes_28g.o
+obj-$(CONFIG_MDIO_FSL_BACKPLANE) += fsl_backplane_debugfs.o
+# Needed by the tracing framework
+CFLAGS_fsl_backplane.o := -I$(src)
+CFLAGS_fsl_backplane_serdes_10g.o := -I$(src)
+CFLAGS_fsl_backplane_serdes_28g.o := -I$(src)

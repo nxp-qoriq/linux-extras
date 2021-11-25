@@ -260,6 +260,68 @@ config MDIO_BUS_MUX_MMIOREG
 
 	  Currently, only 8/16/32 bits registers are supported.
 
+menuconfig MDIO_FSL_BACKPLANE
+	tristate "Support for backplane on Freescale XFI interface"
+	depends on OF_MDIO
+	help
+	  This module provides a driver for Freescale XFI's backplane.
+
+choice
+	prompt "Select default KR setup"
+	depends on MDIO_FSL_BACKPLANE
+	default FSL_BACKPLANE_HARDCODED_KR
+	help
+	  This option selects the default KR setup by using: 
+	  recommended TECR value OR custom defined TECR value.
+
+config FSL_BACKPLANE_HARDCODED_KR
+	bool "Recommended TECR value"
+	help
+	  Use recommended TECR value hardcoded in driver as default KR setup.
+
+config FSL_BACKPLANE_INIT_TECR
+	bool "Custom defined TECR value"
+	help
+	  Use custom defined TECR value as default KR setup.
+
+endchoice
+
+choice
+	prompt "Select default AMP_RED"
+	depends on MDIO_FSL_BACKPLANE && FSL_BACKPLANE_INIT_TECR
+	default FSL_BACKPLANE_AMPRED_RESET
+	help
+	  This option selects the default AMP_RED behavior by using: 
+	  recommended AMP_RED where algorithm resets AMP_RED to zero OR use default AMP_RED according to TECR value.
+
+config FSL_BACKPLANE_AMPRED_RESET
+	bool "Recommended AMP_RED"
+	help
+	  KR algorithm resets AMP_RED to zero during training.
+
+config FSL_BACKPLANE_AMPRED_TECR
+	bool "Custom defined AMP_RED"
+	help
+	  Use default AMP_RED according to TECR value.
+
+endchoice
+
+config FSL_BACKPLANE_DEBUGFS
+	depends on DEBUG_FS && MDIO_FSL_BACKPLANE
+	bool "Enable backplane debugfs support"
+	default n
+	help
+	  Enable advanced backplane debug through debugfs interface.
+
+config FSL_BACKPLANE_DEBUG_MONITORING
+	depends on MDIO_FSL_BACKPLANE && FTRACE
+	bool "Enable advanced trace for debug monitoring"
+	default n
+	help
+	  Enable advanced debug monitoring for backplane status using trace system. 
+	  It requires FTRACE enabled.
+
+# MDIO_FSL_BACKPLANE
 
 endif
 endif
