@@ -2,7 +2,7 @@
 /*
  * Device Tree file for NXP LS1088A QDS Board.
  *
- * Copyright 2017 NXP
+ * Copyright 2017-2019 NXP
  *
  * Harninder Rai <harninder.rai@nxp.com>
  *
@@ -194,3 +194,34 @@
 &sata {
 	status = "okay";
 };
+
+&pcs_mdio1 {
+	status = "okay";
+};
+
+&pcs_mdio2 {
+	status = "okay";
+};
+
+&pcs1 {
+	backplane-mode = "10gbase-kr";
+	compatible = "ethernet-phy-ieee802.3-c45";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0x840 0x40>; /* lane B */
+};
+
+&pcs2 {
+	backplane-mode = "10gbase-kr";
+	compatible = "ethernet-phy-ieee802.3-c45";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0x800 0x40>; /* lane A */
+};
+
+/* DPMAC connections to 10G backplane PHYs, under SerDes 0x1D_0xXX
+ * &dpmac1 {
+ * 	phy-handle = <&pcs1>;
+ * 	phy-connection-type = "10gbase-kr";
+ * };
+ */

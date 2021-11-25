@@ -2,7 +2,7 @@
 //
 // Device Tree file for LX2160AQDS
 //
-// Copyright 2018-2019 NXP
+// Copyright 2018-2019, 2021 NXP
 
 /dts-v1/;
 
@@ -346,3 +346,117 @@
 &sata3 {
 	status = "okay";
 };
+
+&pcs_mdio1 {
+	status = "okay";
+};
+
+&pcs1 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "40gbase-kr4";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xF00 0xE00 0xD00 0xC00>; /* lanes H, G, F, E */
+};
+
+&pcs_mdio2 {
+	status = "okay";
+};
+
+&pcs2 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "40gbase-kr4";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xB00 0xA00 0x900 0x800>; /* lanes D, C, B, A */
+};
+
+&pcs_mdio3 {
+	status = "okay";
+};
+
+&pcs3 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "10gbase-kr";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xF00 0x100>; /* lane H */
+};
+
+&pcs_mdio4 {
+	status = "okay";
+};
+
+&pcs4 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "10gbase-kr";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xE00 0x100>; /* lane G */
+};
+
+&pcs_mdio5 {
+	status = "okay";
+};
+
+&pcs5 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "25gbase-kr";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xD00 0x100>; /* lane F */
+};
+
+&pcs_mdio6 {
+	status = "okay";
+};
+
+&pcs6 {
+	compatible = "ethernet-phy-ieee802.3-c45";
+	backplane-mode = "25gbase-kr";
+	reg = <0x0>;
+	fsl,lane-handle = <&serdes1>;
+	fsl,lane-reg = <0xC00 0x100>; /* lane E */
+};
+
+/* DPMAC connections to 40G backplane PHYs
+ * &dpmac1 {
+ * 	phy-handle = <&pcs1>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "40gbase-kr4";
+ * };
+ * 
+ * &dpmac2 {
+ * 	phy-handle = <&pcs2>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "40gbase-kr4";
+ * };
+ */
+
+/* DPMAC connections to 10G backplane PHYs
+ * &dpmac3 {
+ * 	phy-handle = <&pcs3>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "10gbase-kr";
+ * };
+ * 
+ * &dpmac4 {
+ * 	phy-handle = <&pcs4>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "10gbase-kr";
+ * };
+ */
+ 
+/* DPMAC connections to 25G backplane PHYs
+ * &dpmac5 {
+ * 	phy-handle = <&pcs5>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "25gbase-kr";
+ * };
+ * 
+ * &dpmac6 {
+ * 	phy-handle = <&pcs6>;
+ * 	/delete-property/ pcs-handle;
+ * 	phy-connection-type = "25gbase-kr";
+ * };
+ */

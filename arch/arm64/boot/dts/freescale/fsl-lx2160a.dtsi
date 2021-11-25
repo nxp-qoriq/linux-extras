@@ -2,7 +2,7 @@
 //
 // Device Tree Include file for Layerscape-LX2160A family SoC.
 //
-// Copyright 2018-2020 NXP
+// Copyright 2018-2021 NXP
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
@@ -1407,7 +1407,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			little-endian;
-			status = "disabled";
 		};
 
 		emdio2: mdio@8b97000 {
@@ -1417,7 +1416,13 @@
 			little-endian;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
+		};
+
+		serdes1: serdes@1ea0000 {
+				compatible = "fsl,serdes-28g";
+				reg = <0x0 0x1ea0000 0 0x00002000>;
+				fsl,lane-reg = <0xF00 0xE00 0xD00 0xC00 0xB00 0xA00 0x900 0x800>; /* lanes H, G, F, E, D, C, B, A */
+				little-endian;
 		};
 
 		pcs_mdio1: mdio@8c07000 {

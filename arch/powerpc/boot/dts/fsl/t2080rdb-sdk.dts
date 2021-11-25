@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
 /*
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  */
 
 #include "t2080rdb.dts"
@@ -81,3 +81,33 @@
 		cell-index = <0x11>;
 	};
 };
+
+&mdio9 {
+	pcsphy6: ethernet-phy@0 {
+		backplane-mode = "10gbase-kr";
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x0>;
+		fsl,lane-handle = <&serdes>;
+		fsl,lane-reg = <0x800 0x40>;   /* lane A */
+	};
+};
+
+&mdio10 {
+	pcsphy7: ethernet-phy@0 {
+		backplane-mode = "10gbase-kr";
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x0>;
+		fsl,lane-handle = <&serdes>;
+		fsl,lane-reg = <0x840 0x40>;   /* lane B */
+	};
+};
+
+/* Update MAC connections to backplane PHYs */
+&mac9 {
+	phy-handle = <&pcsphy6>;
+};
+/*
+&mac10 {
+	phy-handle = <&pcsphy7>;
+};
+*/

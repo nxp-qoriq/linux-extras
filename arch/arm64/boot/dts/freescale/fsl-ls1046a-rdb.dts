@@ -3,7 +3,7 @@
  * Device Tree Include file for Freescale Layerscape-1046A family SoC.
  *
  * Copyright 2016 Freescale Semiconductor, Inc.
- * Copyright 2019-2020 NXP
+ * Copyright 2019-2021 NXP
  *
  * Mingkai Hu <mingkai.hu@nxp.com>
  */
@@ -143,22 +143,22 @@
 	};
 
 	ethernet@e8000 {
-		phy-handle = <&sgmii_phy1>;
+		/* removed for kx: phy-handle = <&sgmii_phy1>; */
 		phy-connection-type = "sgmii";
 	};
 
 	ethernet@ea000 {
-		phy-handle = <&sgmii_phy2>;
+		/* removed for kx: phy-handle = <&sgmii_phy2>; */
 		phy-connection-type = "sgmii";
 	};
 
 	ethernet@f0000 { /* 10GEC1 */
-		phy-handle = <&aqr106_phy>;
+		/* removed for kr: phy-handle = <&aqr106_phy>; */
 		phy-connection-type = "xgmii";
 	};
 
 	ethernet@f2000 { /* 10GEC2 */
-		fixed-link = <0 1 1000 0 0>;
+		/* removed for kr: fixed-link = <0 1 1000 0 0>; */
 		phy-connection-type = "xgmii";
 	};
 

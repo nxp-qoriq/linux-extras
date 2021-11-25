@@ -2,6 +2,7 @@
  * T2081 Silicon/SoC Device Tree Source (post include)
  *
  * Copyright 2013 - 2014 Freescale Semiconductor Inc.
+ * Copyright 2019, 2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -548,8 +549,9 @@
 	};
 
 	serdes: serdes@ea000 {
-		compatible = "fsl,t2080-serdes";
+		compatible = "fsl,t2080-serdes", "fsl,serdes-10g";
 		reg = <0xea000 0x4000>;
+		fsl,lane-reg = <0x8C0 0x880 0x840 0x800>; /* lanes D, C, B, A */
 	};
 
 /include/ "elo3-dma-0.dtsi"
@@ -572,7 +574,7 @@
 	spi@110000 {
 		fsl,espi-num-chipselects = <4>;
 	};
-
+/* remove esdhc
 /include/ "qoriq-esdhc-0.dtsi"
 	sdhc@114000 {
 		compatible = "fsl,t2080-esdhc", "fsl,esdhc";
@@ -580,6 +582,7 @@
 		fsl,liodn-reg = <&guts 0x530>; /* SDMMCLIODNR */
 		sdhci,auto-cmd12;
 	};
+*/
 /include/ "qoriq-i2c-0.dtsi"
 /include/ "qoriq-i2c-1.dtsi"
 /include/ "qoriq-duart-0.dtsi"
@@ -588,6 +591,7 @@
 /include/ "qoriq-gpio-1.dtsi"
 /include/ "qoriq-gpio-2.dtsi"
 /include/ "qoriq-gpio-3.dtsi"
+/* remove usb
 /include/ "qoriq-usb2-mph-0.dtsi"
 	usb0: usb@210000 {
 		compatible = "fsl-usb2-mph-v2.5", "fsl-usb2-mph";
@@ -604,6 +608,7 @@
 		dr_mode = "host";
 		phy_type = "utmi";
 	};
+*/
 /include/ "qoriq-sec5.2-0.dtsi"
 /include/ "qoriq-qman3.dtsi"
 /include/ "qoriq-bman1.dtsi"

@@ -3,7 +3,7 @@
  * Device Tree Include file for Freescale Layerscape-2080A family SoC.
  *
  * Copyright 2016 Freescale Semiconductor, Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2021 NXP
  *
  * Abhimanyu Saini <abhimanyu.saini@nxp.com>
  *
@@ -1155,6 +1155,13 @@
 			snps,dis_rxdet_inp3_quirk;
 			snps,incr-burst-type-adjustment = <1>, <4>, <8>, <16>;
 			snps,host-vbus-glitches;
+		};
+
+		serdes1: serdes@1ea0000 {
+				compatible = "fsl,serdes-10g";
+				reg = <0x0 0x1ea0000 0 0x00002000>;
+				fsl,lane-reg = <0x9C0 0x980 0x940 0x900 0x8C0 0x880 0x840 0x800>; /* lanes H, G, F, E, D, C, B, A */
+				little-endian;
 		};
 
 		ccn@4000000 {

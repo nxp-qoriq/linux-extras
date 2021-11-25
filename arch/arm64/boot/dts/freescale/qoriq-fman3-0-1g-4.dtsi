@@ -3,6 +3,7 @@
  * QorIQ FMan v3 1g port #4 device tree
  *
  * Copyright 2012-2015 Freescale Semiconductor Inc.
+ * Copyright 2021 NXP
  *
  */
 
@@ -20,7 +21,7 @@ fman@1a00000 {
 		fsl,qman-channel-id = <0x806>;
 	};
 
-	ethernet@e8000 {
+	mac5: ethernet@e8000 {
 		cell-index = <4>;
 		compatible = "fsl,fman-memac";
 		reg = <0xe8000 0x1000>;
@@ -29,7 +30,7 @@ fman@1a00000 {
 		pcsphy-handle = <&pcsphy4>;
 	};
 
-	mdio@e9000 {
+	mdio5: mdio@e9000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "fsl,fman-memac-mdio", "fsl,fman-xmdio";
